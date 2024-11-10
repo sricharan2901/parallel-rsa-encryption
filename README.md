@@ -16,4 +16,4 @@ gcc receiver.c rsa_openmp.o -o receiver_program `pkg-config --cflags --libs gtk+
 ## MPI
 
 ## CUDA
-CUDA is run on Google Colab
+CUDA is run on Google Colab, T4 GPU
