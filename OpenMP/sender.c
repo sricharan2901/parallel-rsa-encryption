@@ -6,12 +6,12 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <time.h>
 #include "rsa_omp.h"
 
 // RSA Keys (For demonstration purposes; in practice, use secure key generation and storage)
 const uint64_t PUBLIC_KEY_E = 65537;
 const uint64_t PUBLIC_KEY_N = 3233; // Example small modulus (replace with a large one)
-// const uint64_t PRIVATE_KEY_D = 2753; // Not used in sender
 
 // GUI Widgets
 GtkWidget *button_select;
@@ -69,6 +69,9 @@ int encrypt_file(const char *input_path, const char *output_path, uint64_t e, ui
         return -1;
     }
 
+    // Measure encryption time
+    clock_t start_time = clock();
+
     // Read file byte by byte, encrypt each byte
     int byte;
     uint64_t encrypted_byte;
@@ -80,8 +83,12 @@ int encrypt_file(const char *input_path, const char *output_path, uint64_t e, ui
     fclose(fin);
     fclose(fout);
 
+    // Calculate time taken
+    clock_t end_time = clock();
+    double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+
     // Prepare encryption info
-    sprintf(encryption_info, "Encryption:\nPublic Key (e, n): (%llu, %llu)\n", e, n);
+    sprintf(encryption_info, "Encryption:\nPublic Key (e, n): (%llu, %llu)\nTime taken: %.3f seconds\n", e, n, time_taken);
 
     return 0;
 }
@@ -107,7 +114,7 @@ int send_file_socket(const char *ip, int port, const char *file_path, char *encr
     server_addr.sin_port = htons(port);
 
     // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, ip, &server_addr.sin_addr)<=0)  {
+    if (inet_pton(AF_INET, ip, &server_addr.sin_addr) <= 0) {
         perror("Invalid address/ Address not supported");
         close(sockfd);
         fclose(f);
@@ -214,7 +221,7 @@ int main(int argc, char *argv[]) {
     GtkWidget *hbox_file = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     GtkWidget *label_file = gtk_label_new("Selected File:");
     entry_file = gtk_entry_new();
-    gtk_entry_set_tabs(GTK_ENTRY(entry_file), FALSE); // Valid in GTK+ 3
+    gtk_entry_set_tabs(GTK_ENTRY(entry_file), FALSE);
     button_select = gtk_button_new_with_label("Select File");
     g_signal_connect(button_select, "clicked", G_CALLBACK(on_select_file), window);
     gtk_box_pack_start(GTK_BOX(hbox_file), label_file, FALSE, FALSE, 5);
@@ -232,17 +239,3 @@ int main(int argc, char *argv[]) {
     gtk_widget_set_vexpand(scrolled_window, TRUE);
     gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 5);
 
-    text_view = gtk_text_view_new();
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
-    gtk_container_add(GTK_CONTAINER(scrolled_window), text_view);
-
-    // Connect the window's destroy signal to gtk_main_quit
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-    // Show all widgets
-    gtk_widget_show_all(window);
-
-    gtk_main();
-
-    return 0;
-}
